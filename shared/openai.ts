@@ -7,10 +7,23 @@
 import OpenAI from 'openai';
 import { logger } from './logger';
 
-// Инициализация OpenAI клиента
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+let openai: OpenAI | null = null;
+
+function getOpenAIClient(): OpenAI {
+  const apiKey = process.env.OPENAI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error(
+      'OPENAI_API_KEY is required for OpenAI calls. Set it before using DIRECT or API-backed modes.'
+    );
+  }
+
+  if (!openai) {
+    openai = new OpenAI({ apiKey });
+  }
+
+  return openai;
+}
 
 /**
  * Chat Completion Parameters
@@ -40,7 +53,7 @@ export async function createChatCompletion(params: ChatCompletionParams): Promis
     logger.info(`[OpenAI] Calling ${model}...`);
     const startTime = Date.now();
 
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAIClient().chat.completions.create({
       model,
       messages,
       temperature,

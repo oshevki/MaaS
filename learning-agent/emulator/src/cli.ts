@@ -25,6 +25,21 @@ function question(prompt: string): Promise<string> {
   });
 }
 
+function printUsage(): void {
+  console.log(`
+MaaS MVP Test Runner
+
+Usage:
+  npm run test-runner
+  npm run test-runner -- <scenario-id>
+  npm run test-runner -- --help
+
+Modes:
+  Interactive mode starts in MOCK mode and can toggle between MOCK and FULL.
+  DIRECT and FULL modes require runtime dependencies such as OPENAI_API_KEY and DATABASE_URL.
+`);
+}
+
 async function listScenarios(runner: TestRunnerEngine): Promise<void> {
   console.log('\n📋 Available Test Scenarios:');
   console.log('─'.repeat(80));
@@ -132,6 +147,12 @@ async function interactiveMode(runner: TestRunnerEngine): Promise<void> {
 
 async function main() {
   const args = process.argv.slice(2);
+
+  if (args.includes('--help') || args.includes('-h') || args[0] === 'help') {
+    printUsage();
+    rl.close();
+    process.exit(0);
+  }
 
   // Create Test Runner in mock mode by default
   const runner = new TestRunnerEngine({ mode: TestMode.MOCK });

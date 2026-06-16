@@ -14,21 +14,25 @@
     "db:seeds": "ts-node db/run-migrations.ts seeds",
     "db:test": "ts-node shared/test-connection.ts"
   },
-  "keywords": ["ai", "memory", "llm", "event-driven"],
+  "keywords": [
+    "ai",
+    "memory",
+    "llm",
+    "event-driven"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "pg": "^8.11.3",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "openai": "^4.20.1",
-    "uuid": "^9.0.1"
+    "pg": "^8.11.3",
+    "uuid": "^14.0.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/node": "^20.10.5",
     "@types/pg": "^8.10.9",
-    "@types/uuid": "^9.0.7",
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
   }
