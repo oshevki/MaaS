@@ -3,12 +3,39 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
+function getDatabaseSslConfig(): false | { rejectUnauthorized: false } {
+  const sslMode = process.env.DATABASE_SSL?.toLowerCase();
+
+  if (sslMode && ['0', 'false', 'disable', 'disabled', 'off'].includes(sslMode)) {
+    return false;
+  }
+
+  if (sslMode && ['1', 'true', 'require', 'required', 'on'].includes(sslMode)) {
+    return { rejectUnauthorized: false };
+  }
+
+  const connectionString = process.env.DATABASE_URL;
+
+  if (!connectionString) {
+    return false;
+  }
+
+  try {
+    const host = new URL(connectionString).hostname;
+    if (host === 'localhost' || host === '127.0.0.1' || host === '::1') {
+      return false;
+    }
+  } catch {
+    return false;
+  }
+
+  return { rejectUnauthorized: false };
+}
+
 // PostgreSQL connection pool (for queries)
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false, // Required for Supabase
-  },
+  ssl: getDatabaseSslConfig(),
   max: 20, // Maximum number of clients in the pool
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 10000,

@@ -66,6 +66,21 @@ Edit `.env` and add your credentials:
 
 ```env
 DATABASE_URL=postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres
+DATABASE_SSL=true
+OPENAI_API_KEY=sk-...
+PORT=3000
+TEST_USER_ID=00000000-0000-0000-0000-000000000000
+```
+
+For local PostgreSQL instead of Supabase:
+
+```bash
+npm run db:local:up
+```
+
+```env
+DATABASE_URL=postgresql://maas:maas@localhost:5432/maas
+DATABASE_SSL=false
 OPENAI_API_KEY=sk-...
 PORT=3000
 TEST_USER_ID=00000000-0000-0000-0000-000000000000
@@ -74,7 +89,7 @@ TEST_USER_ID=00000000-0000-0000-0000-000000000000
 ### 3. Test Database Connection
 
 ```bash
-ts-node src/test-connection.ts
+npm run db:test
 ```
 
 Expected output:
@@ -87,9 +102,7 @@ Expected output:
 ### 4. Create Database Schema
 
 ```bash
-# Run SQL files in Supabase SQL Editor or via psql
-psql $DATABASE_URL < db/schema.sql
-psql $DATABASE_URL < db/seeds.sql
+npm run db:migrate
 ```
 
 ## Project Structure

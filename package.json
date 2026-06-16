@@ -12,7 +12,9 @@
     "db:migrate": "ts-node db/run-migrations.ts",
     "db:schema": "ts-node db/run-migrations.ts schema",
     "db:seeds": "ts-node db/run-migrations.ts seeds",
-    "db:test": "ts-node shared/test-connection.ts"
+    "db:test": "ts-node shared/test-connection.ts",
+    "db:local:up": "docker compose up -d postgres",
+    "db:local:down": "docker compose down"
   },
   "keywords": [
     "ai",
