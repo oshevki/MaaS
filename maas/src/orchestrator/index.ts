@@ -68,6 +68,7 @@ async function withRetry<T>(
 export class Orchestrator {
   private client: Client | null = null;
   private isRunning: boolean = false;
+  private inFlightTasks = new Set<Promise<void>>();
 
   /**
    * Запустить Orchestrator
@@ -87,14 +88,18 @@ export class Orchestrator {
       logger.info('📡 [Orchestrator] Listening for pipeline events...');
 
       // Обработчик уведомлений
-      this.client.on('notification', async (msg) => {
+      this.client.on('notification', (msg) => {
         if (!msg.payload) return;
 
         try {
           const event: PipelineEvent = JSON.parse(msg.payload);
           logger.info('🔔 [Orchestrator] Event received:', event);
 
-          await this.handleEvent(event);
+          this.trackTask(
+            this.handleEvent(event).catch((error) => {
+              logger.error('[Orchestrator] Error handling notification:', error);
+            })
+          );
         } catch (error) {
           logger.error('[Orchestrator] Error parsing notification:', error);
         }
@@ -119,6 +124,16 @@ export class Orchestrator {
       logger.error('❌ [Orchestrator] Failed to start:', error);
       throw error;
     }
+  }
+
+  /**
+   * Track async notification handlers so graceful shutdown can wait for them.
+   */
+  private trackTask(task: Promise<void>) {
+    this.inFlightTasks.add(task);
+    task.finally(() => {
+      this.inFlightTasks.delete(task);
+    });
   }
 
   /**
@@ -244,6 +259,13 @@ export class Orchestrator {
       try {
         await this.client.query('UNLISTEN pipeline_events');
         this.client.removeAllListeners();
+
+        const pendingTasks = Array.from(this.inFlightTasks);
+        if (pendingTasks.length > 0) {
+          logger.info(`[Orchestrator] Waiting for ${pendingTasks.length} in-flight task(s)...`);
+          await Promise.allSettled(pendingTasks);
+        }
+
         await this.client.end();
         logger.info('👋 [Orchestrator] Stopped');
       } catch (error) {

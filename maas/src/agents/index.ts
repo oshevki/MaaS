@@ -58,25 +58,40 @@ export async function runAnalyzer(pipelineId: string): Promise<void> {
     const keywords = await extractSemanticKeywords(run.user_query);
     logger.info(`[Analyzer] Extracted keywords: [${keywords.join(', ')}]`);
 
-    // Search LSM for relevant memories (v0.1: keyword-based search)
-    // Uses PostgreSQL array overlap operator (&&) to match semantic_tags
+    // Search LSM for relevant memories (v0.2: keyword-based search)
+    // Fetch recent user memories, then filter weak one-tag matches in code.
     const memoryResult = await pool.query(
       `SELECT summary_text, semantic_tags, time_bucket
        FROM lsm_storage
        WHERE user_id = $1
-         AND semantic_tags && $2
        ORDER BY created_at DESC
-       LIMIT 3`,
-      [run.user_id, keywords]
+       LIMIT 20`,
+      [run.user_id]
     );
 
-    const memories = memoryResult.rows.map(row => ({
-      summary_text: row.summary_text,
-      semantic_tags: row.semantic_tags,
-      time_bucket: row.time_bucket
-    }));
+    const normalizedKeywords = keywords.map(keyword => keyword.toLowerCase());
+    const memories = memoryResult.rows
+      .map(row => {
+        const semanticTags = row.semantic_tags || [];
+        const overlapCount = semanticTags
+          .map((tag: string) => tag.toLowerCase())
+          .filter((tag: string) =>
+            normalizedKeywords.some(keyword => tag.includes(keyword) || keyword.includes(tag))
+          )
+          .length;
 
-    logger.info(`[Analyzer] Found ${memories.length} memories from LSM (${keywords.length} keywords)`);
+        return {
+          summary_text: row.summary_text,
+          semantic_tags: semanticTags,
+          time_bucket: row.time_bucket,
+          overlap_count: overlapCount
+        };
+      })
+      .filter(memory => memory.overlap_count >= MIN_MEMORY_TAG_OVERLAP)
+      .slice(0, 3)
+      .map(({ overlap_count: _overlapCount, ...memory }) => memory);
+
+    logger.info(`[Analyzer] Found ${memories.length} relevant memories from LSM (${keywords.length} keywords)`);
 
     // Результат анализа (формат для Assembler)
     const analysis = {
@@ -187,6 +202,7 @@ function extractSimpleKeywords(query: string): string[] {
 // Constants for token management
 const MAX_CONTEXT_TOKENS = 4000; // Leave room for response
 const CHARS_PER_TOKEN = 4; // Rough estimate: 1 token ≈ 4 chars
+const MIN_MEMORY_TAG_OVERLAP = 2;
 
 export async function runAssembler(pipelineId: string): Promise<void> {
   logger.info(`[Assembler] 📦 Starting for ${pipelineId}`);
@@ -217,35 +233,47 @@ export async function runAssembler(pipelineId: string): Promise<void> {
     const prioritizedMemories = prioritizeMemories(analysis.memories || [], searchKeywords);
     logger.info(`[Assembler] Prioritized ${prioritizedMemories.length} memories`);
 
-    // Получить recent conversation из raw_logs (только обработанные)
+    // Получить recent conversation из raw_logs (обработанные и свежие необработанные)
     const logsResult = await pool.query(
       `SELECT
+         pipeline_run_id,
          log_type,
          log_data,
          created_at
        FROM raw_logs
        WHERE user_id = $1
          AND pipeline_run_id != $2
-         AND processed = true
        ORDER BY created_at DESC
-       LIMIT 10`,
+       LIMIT 20`,
       [run.user_id, pipelineId]
     );
 
-    // Группируем логи в пары query-answer (reverse to chronological order)
-    const allLogs = logsResult.rows.reverse();
-    const recentLogs: Array<{ query: string; answer: string }> = [];
-    for (let i = 0; i < allLogs.length; i += 2) {
-      const queryLog = allLogs[i];
-      const answerLog = allLogs[i + 1];
+    // Группируем логи в пары query-answer независимо от порядка UUID.
+    const exchangeMap = new Map<string, { query?: string; answer?: string; created_at: Date }>();
+    for (const log of logsResult.rows) {
+      const exchange: { query?: string; answer?: string; created_at: Date } =
+        exchangeMap.get(log.pipeline_run_id) || { created_at: log.created_at };
 
-      if (queryLog && answerLog && queryLog.log_type === 'USER_QUERY' && answerLog.log_type === 'SYSTEM_RESPONSE') {
-        recentLogs.push({
-          query: queryLog.log_data.query,
-          answer: answerLog.log_data.answer
-        });
+      if (log.created_at < exchange.created_at) {
+        exchange.created_at = log.created_at;
       }
+
+      if (log.log_type === 'USER_QUERY') {
+        exchange.query = log.log_data.query;
+      } else if (log.log_type === 'SYSTEM_RESPONSE') {
+        exchange.answer = log.log_data.answer;
+      }
+
+      exchangeMap.set(log.pipeline_run_id, exchange);
     }
+
+    const recentLogs: Array<{ query: string; answer: string }> = Array.from(exchangeMap.values())
+      .filter((exchange): exchange is { query: string; answer: string; created_at: Date } =>
+        Boolean(exchange.query && exchange.answer)
+      )
+      .sort((a, b) => a.created_at.getTime() - b.created_at.getTime())
+      .slice(-10)
+      .map(({ query, answer }) => ({ query, answer }));
 
     logger.info(`[Assembler] Found ${recentLogs.length} recent exchanges from raw_logs`);
 
@@ -351,7 +379,7 @@ function buildContextWithTokenLimit(
   remainingChars -= systemRole.length;
 
   // Section 4: CURRENT QUERY (always included, reserve space)
-  const querySection = `CURRENT QUERY:\n${currentQuery}\n\nPlease respond naturally, referencing past context when relevant.`;
+  const querySection = `CURRENT QUERY:\n${currentQuery}\n\nPlease respond naturally, referencing past context when relevant. If this is a follow-up about a place, carry forward the country or region from previous context explicitly.`;
   remainingChars -= querySection.length + 50; // Buffer
 
   // Section 2: PREVIOUS CONTEXT (from long-term memory) - prioritized
@@ -445,60 +473,71 @@ export async function runFinalResponder(pipelineId: string): Promise<void> {
       messages: [
         {
           role: 'system',
-          content: 'You are a helpful AI assistant with access to long-term memory. Provide clear, accurate, and contextual responses.'
+          content: 'You are a helpful AI assistant with access to long-term memory. Provide clear, accurate, and contextual responses. Use memory only when it is directly relevant to the current query. Do not introduce unrelated remembered topics. For city/place questions, state the country or region in the first sentence when it is known from the current query or previous context.'
         },
         {
           role: 'user',
           content: contextPayload
         }
       ],
-      temperature: 0.7,
+      temperature: 0.3,
       max_tokens: 2000
     });
 
     logger.info(`[FinalResponder] ✅ OpenAI responded (${answer.length} chars)`);
 
-    // Сохранение результата
-    await pool.query(
-      `UPDATE pipeline_runs
-       SET
-         final_answer = $1,
-         status = 'COMPLETED',
-         updated_at = NOW()
-       WHERE id = $2`,
-      [answer, pipelineId]
-    );
-
     // Логирование в raw_logs (для будущей обработки Archivist)
     logger.info(`[FinalResponder] 📝 Logging to raw_logs...`);
 
-    // Log 1: USER_QUERY
-    await pool.query(
-      `INSERT INTO raw_logs (pipeline_run_id, user_id, log_type, log_data)
-       VALUES ($1, $2, 'USER_QUERY', $3)`,
-      [
-        pipelineId,
-        run.user_id,
-        JSON.stringify({
-          query: run.user_query,
-          timestamp: new Date().toISOString()
-        })
-      ]
-    );
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
 
-    // Log 2: SYSTEM_RESPONSE
-    await pool.query(
-      `INSERT INTO raw_logs (pipeline_run_id, user_id, log_type, log_data)
-       VALUES ($1, $2, 'SYSTEM_RESPONSE', $3)`,
-      [
-        pipelineId,
-        run.user_id,
-        JSON.stringify({
-          answer: answer,
-          timestamp: new Date().toISOString()
-        })
-      ]
-    );
+      // Log 1: USER_QUERY
+      await client.query(
+        `INSERT INTO raw_logs (pipeline_run_id, user_id, log_type, log_data)
+         VALUES ($1, $2, 'USER_QUERY', $3)`,
+        [
+          pipelineId,
+          run.user_id,
+          JSON.stringify({
+            query: run.user_query,
+            timestamp: new Date().toISOString()
+          })
+        ]
+      );
+
+      // Log 2: SYSTEM_RESPONSE
+      await client.query(
+        `INSERT INTO raw_logs (pipeline_run_id, user_id, log_type, log_data)
+         VALUES ($1, $2, 'SYSTEM_RESPONSE', $3)`,
+        [
+          pipelineId,
+          run.user_id,
+          JSON.stringify({
+            answer: answer,
+            timestamp: new Date().toISOString()
+          })
+        ]
+      );
+
+      await client.query(
+        `UPDATE pipeline_runs
+         SET
+           final_answer = $1,
+           status = 'COMPLETED',
+           updated_at = NOW()
+         WHERE id = $2`,
+        [answer, pipelineId]
+      );
+
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
 
     logger.info(`[FinalResponder] ✅ Logged 2 entries to raw_logs`);
     logger.info(`[FinalResponder] ✅ Completed for ${pipelineId}`);
