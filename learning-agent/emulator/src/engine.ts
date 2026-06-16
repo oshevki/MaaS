@@ -151,7 +151,7 @@ export class TestRunnerEngine extends EventEmitter {
 
       switch (this.mode) {
         case TestMode.MOCK:
-          finalAnswer = await this.simulateResponse(user_query);
+          finalAnswer = await this.simulateResponse(user_query, expected_keyword);
           break;
 
         case TestMode.DIRECT:
@@ -228,9 +228,13 @@ export class TestRunnerEngine extends EventEmitter {
   /**
    * Mock Mode: Simulate a response (for quick testing)
    */
-  private async simulateResponse(query: string): Promise<string> {
+  private async simulateResponse(query: string, expectedKeyword: string | null): Promise<string> {
     // Simulate processing delay
     await this.sleep(500);
+
+    if (expectedKeyword) {
+      return `Mock response to: "${query}". Expected keyword: ${expectedKeyword}.`;
+    }
 
     // Generate mock response
     const responses = [

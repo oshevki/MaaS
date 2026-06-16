@@ -1,5 +1,5 @@
 import { Client } from 'pg';
-import { pool } from '../../../shared/db';
+import { getDatabaseSslConfig, pool } from '../../../shared/db';
 import { logger } from '../../../shared/logger';
 import { runAnalyzer, runAssembler, runFinalResponder, runArchivist } from '../agents';
 
@@ -77,9 +77,7 @@ export class Orchestrator {
       // Создаём отдельный Client для LISTEN (не PoolClient)
       this.client = new Client({
         connectionString: process.env.DATABASE_URL,
-        ssl: {
-          rejectUnauthorized: false,
-        },
+        ssl: getDatabaseSslConfig(),
       });
       await this.client.connect();
       this.isRunning = true;

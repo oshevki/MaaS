@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-function getDatabaseSslConfig(): false | { rejectUnauthorized: false } {
+export function getDatabaseSslConfig(): false | { rejectUnauthorized: false } {
   const sslMode = process.env.DATABASE_SSL?.toLowerCase();
 
   if (sslMode && ['0', 'false', 'disable', 'disabled', 'off'].includes(sslMode)) {
