@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MaaS MVP - Test Runner</title>
+    <title>MaaS MVP - Тест-раннер</title>
     <style>
         /* Retro Terminal Theme */
         * {
@@ -259,27 +259,27 @@
         <!-- Header -->
         <div class="header">
             <h1>╔═══════════════════════════════════╗</h1>
-            <h1>║  MaaS MVP - TEST RUNNER v1.0.0  ║</h1>
+            <h1>║  MaaS MVP - ТЕСТ-РАННЕР v1.0.0 ║</h1>
             <h1>╚═══════════════════════════════════╝</h1>
-            <div class="subtitle">Event-Driven AI Mentor Test Framework</div>
+            <div class="subtitle">Фреймворк проверки событийного AI-ментора</div>
         </div>
 
         <!-- Mode Toggle -->
         <div class="mode-toggle">
             <div style="margin-bottom: 10px;">
-                <span>Test Mode: </span>
+                <span>Режим проверки: </span>
                 <button id="mock-mode-btn" class="active" data-mode="mock">MOCK</button>
                 <button id="direct-mode-btn" data-mode="direct">DIRECT</button>
                 <button id="full-mode-btn" data-mode="full">FULL</button>
                 <span style="margin-left: 20px; color: #0a0;">
                     <span id="current-mode-display">MOCK</span>
-                    <span style="font-size: 11px;"> (Current)</span>
+                    <span style="font-size: 11px;"> (текущий)</span>
                 </span>
             </div>
             <div class="mode-help">
-                <strong>MOCK:</strong> Simulated responses (no OpenAI) │
-                <strong>DIRECT:</strong> OpenAI without memory (baseline) │
-                <strong>FULL:</strong> Complete pipeline with memory (real system)
+                <strong>MOCK:</strong> симуляция без OpenAI │
+                <strong>DIRECT:</strong> OpenAI без памяти, базовая линия │
+                <strong>FULL:</strong> полный pipeline с памятью
             </div>
         </div>
 
@@ -288,29 +288,29 @@
 
         <!-- Scenarios Section -->
         <div class="section">
-            <div class="section-title">▶ TEST SCENARIOS</div>
+            <div class="section-title">▶ ТЕСТОВЫЕ СЦЕНАРИИ</div>
             <div id="scenario-list" class="scenario-list">
-                <div class="loading active">Loading scenarios...</div>
+                <div class="loading active">Загружаю сценарии...</div>
             </div>
         </div>
 
         <!-- Results Section -->
         <div id="results-section" class="section" style="display: none;">
-            <div class="section-title">▶ TEST RESULTS</div>
+            <div class="section-title">▶ РЕЗУЛЬТАТЫ ПРОВЕРКИ</div>
 
             <!-- Summary -->
             <div class="summary">
                 <div class="summary-card">
                     <div class="summary-value" id="total-steps">0</div>
-                    <div class="summary-label">TOTAL STEPS</div>
+                    <div class="summary-label">ВСЕГО ШАГОВ</div>
                 </div>
                 <div class="summary-card">
                     <div class="summary-value status-passed" id="passed-steps">0</div>
-                    <div class="summary-label">PASSED</div>
+                    <div class="summary-label">ПРОЙДЕНО</div>
                 </div>
                 <div class="summary-card">
                     <div class="summary-value status-failed" id="failed-steps">0</div>
-                    <div class="summary-label">FAILED</div>
+                    <div class="summary-label">ПРОВАЛЕНО</div>
                 </div>
             </div>
 
@@ -318,11 +318,11 @@
             <table class="results-table">
                 <thead>
                     <tr>
-                        <th style="width: 60px;">STEP</th>
-                        <th style="width: 100px;">STATUS</th>
-                        <th>ANSWER</th>
-                        <th style="width: 200px;">VALIDATION</th>
-                        <th style="width: 100px;">DURATION</th>
+                        <th style="width: 60px;">ШАГ</th>
+                        <th style="width: 100px;">СТАТУС</th>
+                        <th>ОТВЕТ</th>
+                        <th style="width: 200px;">ПРОВЕРКА</th>
+                        <th style="width: 100px;">ВРЕМЯ</th>
                     </tr>
                 </thead>
                 <tbody id="results-body">
@@ -334,6 +334,11 @@
     <script>
         const API_BASE = '/api/test-runner';
         let currentMode = 'MOCK';
+        const STATUS_LABELS = {
+            PASSED: 'ПРОЙДЕН',
+            FAILED: 'ПРОВАЛЕН',
+            RUNNING: 'ВЫПОЛНЯЕТСЯ'
+        };
 
         // Initialize
         async function init() {
@@ -354,7 +359,7 @@
 
                 renderScenarios(data.scenarios);
             } catch (error) {
-                showError(`Failed to load scenarios: ${error.message}`);
+                showError(`Не удалось загрузить сценарии: ${error.message}`);
             }
         }
 
@@ -372,7 +377,7 @@
                         <div class="scenario-desc">${scenario.description}</div>
                     </div>
                     <button class="run-btn" onclick="runScenario('${scenario.id}')">
-                        RUN ▶
+                        ЗАПУСТИТЬ ▶
                     </button>
                 `;
                 list.appendChild(item);
@@ -390,7 +395,7 @@
 
             // Show loading
             const resultsBody = document.getElementById('results-body');
-            resultsBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #ff0;">Running tests...</td></tr>';
+            resultsBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #ff0;">Выполняю проверку...</td></tr>';
 
             try {
                 const response = await fetch(`${API_BASE}/run/${scenarioId}`, {
@@ -405,7 +410,7 @@
 
                 renderResults(data);
             } catch (error) {
-                showError(`Failed to run scenario: ${error.message}`);
+                showError(`Не удалось запустить сценарий: ${error.message}`);
             } finally {
                 // Re-enable run buttons
                 document.querySelectorAll('.run-btn').forEach(btn => btn.disabled = false);
@@ -429,10 +434,10 @@
 
                 row.innerHTML = `
                     <td>${result.step}</td>
-                    <td class="${statusClass}">${result.status === 'PASSED' ? '✓' : '✗'} ${result.status}</td>
-                    <td class="answer-cell">${escapeHtml(result.final_answer || result.error_message || 'N/A')}</td>
-                    <td>${escapeHtml(result.validation?.reason || 'N/A')}</td>
-                    <td>${result.duration_ms ? result.duration_ms + 'ms' : 'N/A'}</td>
+                    <td class="${statusClass}">${result.status === 'PASSED' ? '✓' : '✗'} ${STATUS_LABELS[result.status] || result.status}</td>
+                    <td class="answer-cell">${escapeHtml(result.final_answer || result.error_message || 'Нет данных')}</td>
+                    <td>${escapeHtml(localizeValidation(result.validation?.reason) || 'Нет данных')}</td>
+                    <td>${result.duration_ms ? result.duration_ms + ' мс' : 'Нет данных'}</td>
                 `;
                 tbody.appendChild(row);
             });
@@ -481,14 +486,14 @@
                     document.getElementById('current-mode-display').textContent = currentMode;
                 }
             } catch (error) {
-                showError(`Failed to set mode: ${error.message}`);
+                showError(`Не удалось сменить режим: ${error.message}`);
             }
         }
 
         // Show error
         function showError(message) {
             const errorDiv = document.getElementById('error');
-            errorDiv.textContent = `ERROR: ${message}`;
+            errorDiv.textContent = `ОШИБКА: ${message}`;
             errorDiv.classList.add('active');
         }
 
@@ -503,6 +508,16 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        function localizeValidation(reason) {
+            if (!reason) return reason;
+
+            return reason
+                .replace('Response contains expected keyword:', 'Ответ содержит ожидаемый ключ:')
+                .replace('Response does not contain expected keyword:', 'Ответ не содержит ожидаемый ключ:')
+                .replace('Response received (no keyword validation)', 'Ответ получен, проверка по ключу не задана')
+                .replace('No response received', 'Ответ не получен');
         }
 
         // Initialize on load

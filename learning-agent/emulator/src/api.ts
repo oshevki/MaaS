@@ -24,6 +24,16 @@ function getTestRunner(): TestRunnerEngine {
   return testRunner;
 }
 
+function localizeScenarioPreview(query: string): string {
+  const previews: Record<string, string> = {
+    'What is the capital of France?': 'Какая столица Франции?',
+    'I discussed project Alpha with you last week. Can you remind me what we decided?': 'Я обсуждал с тобой проект Alpha на прошлой неделе. Напомни, что мы решили?',
+    'I need help planning a vacation to Japan': 'Мне нужна помощь с планированием поездки в Японию'
+  };
+
+  return previews[query] || query;
+}
+
 /**
  * GET /api/test-runner/scenarios
  * List all available test scenarios
@@ -39,7 +49,7 @@ router.get('/scenarios', async (req: Request, res: Response) => {
         id: s.scenario_id,
         stepCount: s.step_count,
         firstQuery: s.first_query,
-        description: `${s.step_count} step scenario: ${s.first_query.substring(0, 60)}...`
+        description: `Сценарий на ${s.step_count} шаг(а): ${localizeScenarioPreview(s.first_query).substring(0, 80)}...`
       }))
     });
   } catch (error: any) {
@@ -152,7 +162,7 @@ router.post('/mode', async (req: Request, res: Response) => {
   if (!validModes.includes(mode)) {
     return res.status(400).json({
       success: false,
-      error: `Invalid mode. Must be one of: ${validModes.join(', ')}`,
+      error: `Некорректный режим. Должен быть один из: ${validModes.join(', ')}`,
       validModes
     });
   }
@@ -164,7 +174,7 @@ router.post('/mode', async (req: Request, res: Response) => {
     res.json({
       success: true,
       mode: mode.toUpperCase(),
-      message: `Test Runner mode set to ${mode.toUpperCase()}`
+      message: `Режим тест-раннера: ${mode.toUpperCase()}`
     });
   } catch (error: any) {
     console.error('Error setting mode:', error);

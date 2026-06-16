@@ -69,7 +69,7 @@ router.post('/mode', (req: Request, res: Response) => {
   if (mode !== 'direct' && mode !== 'pipeline') {
     return res.status(400).json({
       success: false,
-      error: 'Invalid mode. Must be "direct" or "pipeline"'
+      error: 'Некорректный режим. Используй "direct" или "pipeline"'
     });
   }
 
@@ -80,8 +80,8 @@ router.post('/mode', (req: Request, res: Response) => {
     success: true,
     mode: currentMode,
     description: mode === 'pipeline'
-      ? 'Mentor responses will use MaaS pipeline with LSM memory'
-      : 'Direct OpenAI calls (no cross-dialog memory)'
+      ? 'Ответы ментора идут через MaaS pipeline с LSM-памятью'
+      : 'Прямые вызовы OpenAI без памяти между диалогами'
   });
 });
 
@@ -94,8 +94,8 @@ router.get('/mode', (req: Request, res: Response) => {
     success: true,
     mode: currentMode,
     description: currentMode === 'pipeline'
-      ? 'Pipeline mode: Uses MaaS memory'
-      : 'Direct mode: No cross-dialog memory'
+      ? 'Конвейер: используется память MaaS'
+      : 'Прямой режим: без памяти между диалогами'
   });
 });
 
@@ -107,7 +107,7 @@ router.post('/generate', async (req: Request, res: Response) => {
   if (isEmulating) {
     return res.status(409).json({
       success: false,
-      error: 'Emulation already in progress',
+      error: 'Эмуляция уже выполняется',
       progress: currentEmulation?.progress,
       total: currentEmulation?.total
     });
@@ -116,9 +116,9 @@ router.post('/generate', async (req: Request, res: Response) => {
   const mode = req.body.mode || currentMode;
 
   const config: EmulationConfig = {
-    studentPrompt: req.body.studentPrompt || 'You are a curious student learning programming.',
-    mentorPrompt: req.body.mentorPrompt || 'You are an experienced programming mentor.',
-    topic: req.body.topic || 'General programming concepts',
+    studentPrompt: req.body.studentPrompt || 'Ты любознательный ученик, который изучает программирование. Отвечай на русском.',
+    mentorPrompt: req.body.mentorPrompt || 'Ты опытный ментор по программированию. Отвечай на русском.',
+    topic: req.body.topic || 'Общие концепции программирования',
     dialogCount: Math.min(req.body.dialogCount || 3, 10),
     turnsPerDialog: Math.min(req.body.turnsPerDialog || 4, 10),
     mode
@@ -237,8 +237,8 @@ async function generateDialog(
       // Route through MaaS pipeline - both roles use MaaS!
       // Include the meta-prompt so MaaS knows the role
       const studentQuery = turn === 0
-        ? `[ROLE INSTRUCTION: ${config.studentPrompt}]\n\nTopic: ${config.topic}\n\nGenerate a student's opening question about this topic.`
-        : `[ROLE INSTRUCTION: ${config.studentPrompt}]\n\nTopic: ${config.topic}\n\nGenerate a follow-up question from the student.`;
+        ? `[ИНСТРУКЦИЯ РОЛИ: ${config.studentPrompt}]\n\nТема: ${config.topic}\n\nСгенерируй первый вопрос ученика по этой теме. Пиши только по-русски.`
+        : `[ИНСТРУКЦИЯ РОЛИ: ${config.studentPrompt}]\n\nТема: ${config.topic}\n\nСгенерируй следующий уточняющий вопрос ученика. Пиши только по-русски.`;
 
       studentMessage = await getResponseViaPipeline(studentUserId, studentQuery, 'student');
       studentSource = 'pipeline';
@@ -271,7 +271,7 @@ async function generateDialog(
     if (mode === 'pipeline') {
       // Route through MaaS pipeline - both roles use MaaS!
       // Include the meta-prompt so MaaS knows the role
-      const mentorQuery = `[ROLE INSTRUCTION: ${config.mentorPrompt}]\n\nStudent's question: "${studentMessage}"\n\nRespond as the mentor.`;
+      const mentorQuery = `[ИНСТРУКЦИЯ РОЛИ: ${config.mentorPrompt}]\n\nВопрос ученика: "${studentMessage}"\n\nОтветь как ментор. Пиши только по-русски.`;
 
       mentorMessage = await getResponseViaPipeline(studentUserId, mentorQuery, 'mentor');
       mentorSource = 'pipeline';
@@ -342,18 +342,18 @@ async function getResponseViaPipeline(
 
     if (row.status === 'COMPLETED') {
       logger.info(`[Emulator] Pipeline completed in ${Date.now() - startTime}ms`);
-      return row.final_answer || 'No response generated';
+      return row.final_answer || 'Ответ не был сгенерирован';
     }
 
     if (row.status === 'FAILED') {
-      throw new Error(`Pipeline failed: ${row.error_message}`);
+      throw new Error(`Pipeline завершился с ошибкой: ${row.error_message}`);
     }
 
     // Still processing
     await sleep(pollInterval);
   }
 
-  throw new Error(`Pipeline timeout after ${timeoutMs}ms. Is Orchestrator running?`);
+  throw new Error(`Pipeline не ответил за ${timeoutMs}мс. Orchestrator запущен?`);
 }
 
 /**
@@ -367,14 +367,15 @@ async function generateStudentMessage(
 ): Promise<string> {
   const systemPrompt = `${metaPrompt}
 
-You are having a learning conversation about: ${topic}
+Ты ведешь учебный диалог на тему: ${topic}
 
-Guidelines:
-- Ask genuine questions that show curiosity
-- Build on previous answers in the conversation
-- Show when you're confused or need clarification
-- Be concise (2-3 sentences max)
-${isFirst ? '- Start the conversation by introducing what you want to learn' : '- Continue the conversation naturally'}`;
+Правила:
+- Задавай живые вопросы, в которых видно любопытство
+- Опирайся на предыдущие ответы в диалоге
+- Показывай, если тебе что-то непонятно или нужно уточнение
+- Пиши кратко: максимум 2-3 предложения
+- Пиши только по-русски
+${isFirst ? '- Начни разговор с того, что именно хочешь понять' : '- Продолжи разговор естественно'}`;
 
   const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
     { role: 'system', content: systemPrompt }
@@ -390,7 +391,7 @@ ${isFirst ? '- Start the conversation by introducing what you want to learn' : '
   if (!isFirst) {
     messages.push({
       role: 'user',
-      content: 'Continue as the student. What would you say or ask next?'
+      content: 'Продолжи как ученик. Что бы ты сказал или спросил дальше? Ответь по-русски.'
     });
   }
 
@@ -414,13 +415,14 @@ async function generateMentorMessage(
 ): Promise<string> {
   const systemPrompt = `${metaPrompt}
 
-You are having a teaching conversation about: ${topic}
+Ты ведешь обучающий диалог на тему: ${topic}
 
-Guidelines:
-- Guide with questions rather than direct answers
-- Help the student discover insights themselves
-- Be encouraging but accurate
-- Be concise (2-4 sentences max)`;
+Правила:
+- Направляй вопросами, а не только готовыми ответами
+- Помогай ученику самому находить понимание
+- Поддерживай, но оставайся точным
+- Пиши кратко: максимум 2-4 предложения
+- Пиши только по-русски`;
 
   const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
     { role: 'system', content: systemPrompt }

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>User Emulator | MaaS Learning Agent</title>
+  <title>Эмулятор пользователя | MaaS Learning Agent</title>
   <style>
     :root {
       --bg-dark: #0d1117;
@@ -444,58 +444,58 @@
 <body>
   <div class="container">
     <header>
-      <h1>User Emulator <span style="font-size: 11px; color: var(--text-dim); font-weight: 400;">v0.3.1</span></h1>
+      <h1>Эмулятор пользователя <span style="font-size: 11px; color: var(--text-dim); font-weight: 400;">v0.3.1</span></h1>
       <div style="display: flex; align-items: center; gap: 10px;">
-        <a href="index.html" class="nav-link">Test Runner</a>
-        <span class="status-badge" id="globalStatus">IDLE</span>
+        <a href="index.html" class="nav-link">Тест-раннер</a>
+        <span class="status-badge" id="globalStatus">ОЖИДАНИЕ</span>
       </div>
     </header>
 
     <div class="main-grid">
       <!-- Config Panel -->
       <div class="panel">
-        <div class="panel-header">Configuration</div>
+        <div class="panel-header">Настройки</div>
         <div class="panel-content">
           <div class="config-section">
             <div class="config-title">
               <span class="dot student"></span>
-              Student Role
+              Роль ученика
             </div>
-            <label>Meta-prompt</label>
-            <textarea id="studentPrompt">You are a curious student learning programming. Ask questions, seek clarification, and try to understand concepts deeply. Be genuine in your confusion and curiosity.</textarea>
+            <label>Мета-промпт</label>
+            <textarea id="studentPrompt">Ты любознательный ученик, который изучает программирование. Задавай вопросы, проси уточнения и старайся глубоко понять концепции. Если что-то непонятно, честно показывай свое замешательство и любопытство. Отвечай на русском.</textarea>
           </div>
 
           <div class="config-section">
             <div class="config-title">
               <span class="dot mentor"></span>
-              Mentor Role
+              Роль ментора
             </div>
-            <label>Meta-prompt</label>
-            <textarea id="mentorPrompt">You are an experienced programming mentor. Guide the student with questions rather than direct answers. Help them discover solutions themselves. Be patient and encouraging.</textarea>
+            <label>Мета-промпт</label>
+            <textarea id="mentorPrompt">Ты опытный ментор по программированию. Направляй ученика вопросами, а не только готовыми ответами. Помогай ему самому находить решения. Будь терпеливым и поддерживающим. Отвечай на русском.</textarea>
           </div>
 
           <div class="config-section">
-            <div class="config-title">Settings</div>
+            <div class="config-title">Параметры</div>
 
-            <label>Mode</label>
+            <label>Режим</label>
             <select id="emulationMode">
-              <option value="direct">Direct (OpenAI only)</option>
-              <option value="pipeline">Pipeline (MaaS Memory)</option>
+              <option value="direct">Прямой режим: только OpenAI</option>
+              <option value="pipeline">Конвейер: память MaaS</option>
             </select>
             <div style="font-size: 9px; color: var(--text-dim); margin-top: -4px; margin-bottom: 8px;" id="modeHint">
-              Direct: no memory between dialogs
+              Прямой режим: без памяти между диалогами
             </div>
 
-            <label>Topic</label>
-            <input type="text" id="topic" value="Understanding recursion in programming">
+            <label>Тема</label>
+            <input type="text" id="topic" value="Понимание рекурсии в программировании">
 
             <div class="input-row">
               <div>
-                <label>Dialogs</label>
+                <label>Диалоги</label>
                 <input type="number" id="dialogCount" value="1" min="1" max="10">
               </div>
               <div>
-                <label>Turns</label>
+                <label>Реплики</label>
                 <input type="number" id="turnsCount" value="3" min="1" max="10">
               </div>
             </div>
@@ -503,10 +503,10 @@
 
           <div class="config-section">
             <button class="btn btn-primary" id="startBtn" onclick="startEmulation()">
-              Start Emulation
+              Запустить эмуляцию
             </button>
             <button class="btn btn-stop" id="stopBtn" onclick="stopEmulation()" style="display: none;">
-              Stop
+              Остановить
             </button>
             <div class="progress-bar">
               <div class="progress-fill" id="progressFill"></div>
@@ -515,10 +515,10 @@
 
           <div class="config-section" style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border);">
             <button class="btn" style="background: var(--bg-input); border: 1px solid var(--border);" onclick="resetToDefaults()">
-              Reset to Defaults
+              Сбросить настройки
             </button>
             <div style="font-size: 9px; color: var(--text-dim); margin-top: 6px; text-align: center;" id="saveStatus">
-              Config auto-saves to browser
+              Настройки сохраняются в браузере
             </div>
           </div>
         </div>
@@ -527,17 +527,17 @@
       <!-- Dialog Panel -->
       <div class="panel">
         <div class="panel-header">
-          <span>Emulation Output</span>
+          <span>Результат эмуляции</span>
           <div style="display: flex; align-items: center; gap: 10px;">
-            <button class="export-btn" id="exportBtn" onclick="exportToMarkdown()" style="display: none;">Export MD</button>
+            <button class="export-btn" id="exportBtn" onclick="exportToMarkdown()" style="display: none;">Экспорт MD</button>
             <span id="dialogStats" style="color: var(--text);">0 / 0</span>
           </div>
         </div>
         <div class="panel-content" id="dialogContent">
           <div class="empty-state" id="emptyState">
             <div class="empty-icon">S / M</div>
-            <div class="empty-text">No dialogs yet</div>
-            <div class="empty-hint">Configure and click "Start Emulation"</div>
+            <div class="empty-text">Диалогов пока нет</div>
+            <div class="empty-hint">Настрой параметры и нажми «Запустить эмуляцию»</div>
           </div>
         </div>
       </div>
@@ -545,14 +545,14 @@
       <!-- System Log Panel -->
       <div class="panel">
         <div class="panel-header">
-          <span>System Log</span>
-          <span class="log-clear" onclick="clearLog()">clear</span>
+          <span>Системный лог</span>
+          <span class="log-clear" onclick="clearLog()">очистить</span>
         </div>
         <div class="panel-content" id="logContent">
           <div class="log-entry info">
             <span class="log-time">--:--:--</span>
             <span class="log-icon">i</span>
-            <span class="log-message">Ready. Configure and start emulation.</span>
+            <span class="log-message">Готово. Настрой параметры и запусти эмуляцию.</span>
           </div>
         </div>
       </div>
@@ -568,15 +568,21 @@
 
     // Default values
     const DEFAULTS = {
-      studentPrompt: 'You are a curious student learning programming. Ask questions, seek clarification, and try to understand concepts deeply. Be genuine in your confusion and curiosity.',
-      mentorPrompt: 'You are an experienced programming mentor. Guide the student with questions rather than direct answers. Help them discover solutions themselves. Be patient and encouraging.',
-      topic: 'Understanding recursion in programming',
+      studentPrompt: 'Ты любознательный ученик, который изучает программирование. Задавай вопросы, проси уточнения и старайся глубоко понять концепции. Если что-то непонятно, честно показывай свое замешательство и любопытство. Отвечай на русском.',
+      mentorPrompt: 'Ты опытный ментор по программированию. Направляй ученика вопросами, а не только готовыми ответами. Помогай ему самому находить решения. Будь терпеливым и поддерживающим. Отвечай на русском.',
+      topic: 'Понимание рекурсии в программировании',
       mode: 'direct',
       dialogCount: '1',
       turnsCount: '3'
     };
 
-    const STORAGE_KEY = 'maas_emulator_config';
+    const STORAGE_KEY = 'maas_emulator_config_ru_v1';
+    const STATUS_LABELS = {
+      IDLE: 'ОЖИДАНИЕ',
+      RUNNING: 'РАБОТАЕТ',
+      COMPLETED: 'ГОТОВО',
+      ERROR: 'ОШИБКА'
+    };
 
     // Load config from localStorage
     function loadConfig() {
@@ -594,11 +600,11 @@
           // Update mode hint
           updateModeHint(config.mode || DEFAULTS.mode);
 
-          log('info', 'Loaded saved config from browser');
+          log('info', 'Настройки загружены из браузера');
           return true;
         }
       } catch (e) {
-        console.error('Failed to load config:', e);
+        console.error('Не удалось загрузить настройки:', e);
       }
       return false;
     }
@@ -618,14 +624,14 @@
 
         // Show save indicator
         const status = document.getElementById('saveStatus');
-        status.textContent = '✓ Saved';
+        status.textContent = '✓ Сохранено';
         status.style.color = 'var(--mentor)';
         setTimeout(() => {
-          status.textContent = 'Config auto-saves to browser';
+          status.textContent = 'Настройки сохраняются в браузере';
           status.style.color = 'var(--text-dim)';
         }, 1500);
       } catch (e) {
-        console.error('Failed to save config:', e);
+        console.error('Не удалось сохранить настройки:', e);
       }
     }
 
@@ -641,13 +647,13 @@
       updateModeHint(DEFAULTS.mode);
 
       localStorage.removeItem(STORAGE_KEY);
-      log('info', 'Reset to default config');
+      log('info', 'Настройки сброшены');
 
       const status = document.getElementById('saveStatus');
-      status.textContent = '✓ Reset to defaults';
+      status.textContent = '✓ Сброшено';
       status.style.color = 'var(--warning)';
       setTimeout(() => {
-        status.textContent = 'Config auto-saves to browser';
+        status.textContent = 'Настройки сохраняются в браузере';
         status.style.color = 'var(--text-dim)';
       }, 1500);
     }
@@ -656,10 +662,10 @@
     function updateModeHint(mode) {
       const hint = document.getElementById('modeHint');
       if (mode === 'pipeline') {
-        hint.textContent = 'Pipeline: Both roles use MaaS with memory';
+        hint.textContent = 'Конвейер: обе роли идут через MaaS с памятью';
         hint.style.color = 'var(--mentor)';
       } else {
-        hint.textContent = 'Direct: no memory between dialogs';
+        hint.textContent = 'Прямой режим: без памяти между диалогами';
         hint.style.color = 'var(--text-dim)';
       }
     }
@@ -719,12 +725,12 @@
 
     function clearLog() {
       document.getElementById('logContent').innerHTML = '';
-      log('info', 'Log cleared');
+      log('info', 'Лог очищен');
     }
 
     function updateStatus(status) {
       const badge = document.getElementById('globalStatus');
-      badge.textContent = status;
+      badge.textContent = STATUS_LABELS[status] || status;
       badge.className = 'status-badge';
       if (status === 'RUNNING') badge.classList.add('running');
       if (status === 'COMPLETED') badge.classList.add('completed');
@@ -745,8 +751,8 @@
 
     function createMessage(role, text, timestamp) {
       const avatar = role === 'student' ? 'S' : 'M';
-      const roleName = role === 'student' ? 'Student' : 'Mentor';
-      const time = timestamp ? new Date(timestamp).toLocaleTimeString() : '';
+      const roleName = role === 'student' ? 'Ученик' : 'Ментор';
+      const time = timestamp ? new Date(timestamp).toLocaleTimeString('ru-RU') : '';
 
       return `
         <div class="message">
@@ -803,7 +809,7 @@
           <div class="typing" style="justify-content: center;">
             <span></span><span></span><span></span>
           </div>
-          <div class="empty-text">Generating...</div>
+          <div class="empty-text">Генерирую...</div>
         </div>
       `;
 
@@ -811,10 +817,10 @@
       updateProgress(0, config.dialogCount);
 
       // Log start
-      const modeLabel = mode === 'pipeline' ? 'PIPELINE (MaaS Memory)' : 'DIRECT (no memory)';
-      log('info', `Mode: ${modeLabel}`);
-      log('info', `Starting emulation: ${config.dialogCount} dialogs, ${config.turnsPerDialog} turns`);
-      log('info', `Topic: "${config.topic}"`);
+      const modeLabel = mode === 'pipeline' ? 'Конвейер: память MaaS' : 'Прямой режим: без памяти';
+      log('info', `Режим: ${modeLabel}`);
+      log('info', `Запускаю эмуляцию: диалогов ${config.dialogCount}, реплик ${config.turnsPerDialog}`);
+      log('info', `Тема: «${config.topic}»`);
       log('api', 'POST /api/emulator/generate');
 
       // Start polling
@@ -834,21 +840,21 @@
 
         if (!response.ok) {
           const error = await response.json();
-          throw new Error(error.error || 'API request failed');
+          throw new Error(error.error || 'Запрос к API не удался');
         }
 
         const data = await response.json();
 
         if (!data.success) {
-          throw new Error(data.error || 'Generation failed');
+          throw new Error(data.error || 'Генерация не удалась');
         }
 
-        log('success', `API responded in ${elapsed}s`);
-        log('info', `Mode used: ${data.mode || mode}`);
-        log('info', `Student ID: ${data.userIds.student.slice(0, 8)}...`);
-        log('info', `Mentor ID: ${data.userIds.mentor.slice(0, 8)}...`);
+        log('success', `API ответил за ${elapsed} с`);
+        log('info', `Использован режим: ${data.mode || mode}`);
+        log('info', `ID ученика: ${data.userIds.student.slice(0, 8)}...`);
+        log('info', `ID ментора: ${data.userIds.mentor.slice(0, 8)}...`);
         if (data.mode === 'pipeline') {
-          log('success', 'Mentor responses routed through MaaS pipeline with memory!');
+          log('success', 'Ответы ментора прошли через MaaS pipeline с памятью!');
         }
 
         // Store data for export
@@ -866,25 +872,25 @@
 
         data.dialogs.forEach((dialog, index) => {
           updateProgress(index + 1, data.dialogs.length);
-          log('success', `Dialog #${index + 1} generated (${dialog.messages.length} messages)`);
+          log('success', `Диалог #${index + 1} сгенерирован (${dialog.messages.length} сообщений)`);
           renderDialog(dialog, index + 1);
 
           // Log each message
           dialog.messages.forEach(msg => {
             log(msg.role, `${msg.content.slice(0, 50)}...`);
-            log('db', `Stored in raw_logs`);
+            log('db', 'Сохранено в raw_logs');
           });
         });
 
-        log('success', `Emulation complete! ${data.dialogs.length} dialogs generated`);
+        log('success', `Эмуляция завершена: сгенерировано диалогов ${data.dialogs.length}`);
         updateStatus('COMPLETED');
 
       } catch (error) {
         if (error.name === 'AbortError') {
-          log('warning', 'Emulation aborted by user');
+          log('warning', 'Эмуляция остановлена пользователем');
           updateStatus('IDLE');
         } else {
-          log('error', `Error: ${error.message}`);
+          log('error', `Ошибка: ${error.message}`);
           document.getElementById('dialogContent').innerHTML = `
             <div class="empty-state">
               <div class="empty-icon" style="color: #f85149;">!</div>
@@ -904,7 +910,7 @@
       const threadHtml = `
         <div class="dialog-thread" id="${threadId}">
           <div class="thread-header">
-            <span class="thread-id">Dialog #${dialogNumber}</span>
+            <span class="thread-id">Диалог #${dialogNumber}</span>
             <span>${escapeHtml(dialog.topic)}</span>
           </div>
         </div>
@@ -938,66 +944,66 @@
       if (!lastEmulationData) return;
 
       const { config, mode, userIds, dialogs, timestamp } = lastEmulationData;
-      const date = new Date(timestamp).toLocaleString();
-      const modeLabel = mode === 'pipeline' ? 'Pipeline (MaaS Memory)' : 'Direct (OpenAI only)';
+      const date = new Date(timestamp).toLocaleString('ru-RU');
+      const modeLabel = mode === 'pipeline' ? 'Конвейер: память MaaS' : 'Прямой режим: только OpenAI';
 
-      let md = `# Emulation Export
+      let md = `# Экспорт эмуляции
 
-**Generated:** ${date}
-**Mode:** ${modeLabel}
-**Topic:** ${config.topic}
-**Dialogs:** ${dialogs.length}
-**Turns per dialog:** ${config.turnsPerDialog}
+**Создано:** ${date}
+**Режим:** ${modeLabel}
+**Тема:** ${config.topic}
+**Диалогов:** ${dialogs.length}
+**Реплик на диалог:** ${config.turnsPerDialog}
 
 ---
 
-## Configuration
+## Настройки
 
-### Student Meta-prompt
+### Мета-промпт ученика
 \`\`\`
 ${config.studentPrompt}
 \`\`\`
 
-### Mentor Meta-prompt
+### Мета-промпт ментора
 \`\`\`
 ${config.mentorPrompt}
 \`\`\`
 
 ---
 
-## Session IDs
-- **Student:** \`${userIds.student}\`
-- **Mentor:** \`${userIds.mentor}\`
+## ID сессии
+- **Ученик:** \`${userIds.student}\`
+- **Ментор:** \`${userIds.mentor}\`
 
 ---
 
 `;
 
       dialogs.forEach((dialog, i) => {
-        md += `## Dialog ${i + 1}\n\n`;
+        md += `## Диалог ${i + 1}\n\n`;
 
         dialog.messages.forEach(msg => {
-          const speaker = msg.role === 'student' ? 'Student' : 'Mentor';
-          const time = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '';
+          const speaker = msg.role === 'student' ? 'Ученик' : 'Ментор';
+          const time = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString('ru-RU', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '';
           md += `**${speaker}** *(${time})*: ${msg.content}\n\n`;
         });
 
         md += `---\n\n`;
       });
 
-      md += `## Feedback Request
+      md += `## Запрос на обратную связь
 
-Please analyze these dialogs and provide feedback on:
+Проанализируй эти диалоги и дай обратную связь:
 
-1. **Natural flow** — Does the conversation feel natural?
-2. **Learning progression** — Does the student show understanding?
-3. **Mentoring quality** — Does the mentor guide effectively?
-4. **Topic coverage** — Is the topic explored adequately?
-5. **Improvements** — What could be better?
+1. **Естественность** — диалог звучит живо?
+2. **Прогресс обучения** — видно ли, что ученик начинает понимать тему?
+3. **Качество менторства** — эффективно ли ментор направляет ученика?
+4. **Покрытие темы** — тема раскрыта достаточно?
+5. **Улучшения** — что можно сделать лучше?
 
 ---
 
-*Exported from MaaS User Emulator v0.3.0*
+*Экспортировано из MaaS User Emulator v0.3.1*
 `;
 
       // Download
@@ -1009,7 +1015,7 @@ Please analyze these dialogs and provide feedback on:
       a.click();
       URL.revokeObjectURL(url);
 
-      log('success', 'Exported to markdown');
+      log('success', 'Экспортировано в Markdown');
     }
   </script>
 </body>
